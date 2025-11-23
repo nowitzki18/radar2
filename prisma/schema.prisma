@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  metrics     Metric[]
+  alerts      Alert[]
+  settings    CampaignSettings?
+  
+  @@index([status])
+}
+
+model Metric {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  timestamp   DateTime
+  ctr         Float
+  cpc         Float
+  roas        Float
+  conversions Int
+  bounceRate  Float
+  spend       Float
+  
+  isAnomaly   Boolean  @default(false)
+  anomalyType String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([campaignId, timestamp])
+  @@index([isAnomaly])
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  campaignId  String
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  severity    String   // "critical", "warning", "info"
+  status      String   @default("open") // "open", "resolved", "dismissed"
+  metric      String   // "ctr", "cpc", "roas", etc.
+  message     String
+  value       Float?
+  threshold   Float?
+  
+  resolvedAt  DateTime?
+  dismissedAt DateTime?
+  resolvedBy  String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  suggestions String?  // JSON string of AI suggestions
+  
+  @@index([campaignId])
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+model CampaignSettings {
+  id          String   @id @default(cuid())
+  campaignId  String   @unique
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  ctrSensitivity     Float @default(0.2)
+  cpcSensitivity     Float @default(0.2)
+  roasSensitivity    Float @default(0.2)
+  conversionSensitivity Float @default(0.2)
+  bounceSensitivity  Float @default(0.2)
+  spendSensitivity   Float @default(0.2)
+  
+  updatedAt   DateTime @updatedAt
+}
+
+model GlobalSettings {
+  id          String   @id @default(cuid())
+  
+  slackEnabled    Boolean @default(false)
+  emailEnabled    Boolean @default(false)
+  inAppEnabled    Boolean @default(true)
+  
+  slackWebhook    String?
+  emailAddress    String?
+  
+  updatedAt   DateTime @updatedAt
+  
+  @@map("global_settings")
+}
+
+model AlertRule {
+  id          String   @id @default(cuid())
+  
+  name        String
+  metric      String
+  operator    String   // "lt", "gt", "eq", "gte", "lte"
+  threshold   Float
+  severity    String   @default("warning")
+  enabled     Boolean  @default(true)
+  
+  campaignId  String?  // null for global rules
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([enabled])
+  @@index([campaignId])
+}
+
