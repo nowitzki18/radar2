@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { format } from 'date-fns'
+import React from 'react'
 
 interface Metric {
   timestamp: string
@@ -75,22 +76,28 @@ export default function CampaignChart({ metrics, metricType, title }: CampaignCh
             dataKey="value"
             stroke="#3b82f6"
             strokeWidth={2}
-            dot={(props: any) => {
+            dot={(props: any): React.ReactElement => {
               const { cx, cy, payload } = props
               const isAnomaly = payload.isAnomaly
               if (isAnomaly) {
-                return (
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={6}
-                    fill="red"
-                    stroke="white"
-                    strokeWidth={2}
-                  />
-                )
+                return React.createElement('circle', {
+                  key: `dot-${cx}-${cy}`,
+                  cx,
+                  cy,
+                  r: 6,
+                  fill: 'red',
+                  stroke: 'white',
+                  strokeWidth: 2,
+                })
               }
-              return null
+              // Return a transparent dot for non-anomalies
+              return React.createElement('circle', {
+                key: `dot-${cx}-${cy}`,
+                cx,
+                cy,
+                r: 0,
+                fill: 'transparent',
+              })
             }}
             activeDot={{ r: 6 }}
             name={title}
