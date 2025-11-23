@@ -3,17 +3,18 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     let settings = await prisma.campaignSettings.findUnique({
-      where: { campaignId: params.id },
+      where: { campaignId: id },
     })
 
     if (!settings) {
       settings = await prisma.campaignSettings.create({
         data: {
-          campaignId: params.id,
+          campaignId: id,
         },
       })
     }
@@ -27,24 +28,25 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
 
     let settings = await prisma.campaignSettings.findUnique({
-      where: { campaignId: params.id },
+      where: { campaignId: id },
     })
 
     if (settings) {
       settings = await prisma.campaignSettings.update({
-        where: { campaignId: params.id },
+        where: { campaignId: id },
         data: body,
       })
     } else {
       settings = await prisma.campaignSettings.create({
         data: {
-          campaignId: params.id,
+          campaignId: id,
           ...body,
         },
       })

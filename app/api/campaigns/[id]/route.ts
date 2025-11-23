@@ -3,11 +3,12 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const campaign = await prisma.campaign.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         settings: true,
         alerts: {
@@ -29,7 +30,7 @@ export async function GET(
 
     const metrics = await prisma.metric.findMany({
       where: {
-        campaignId: params.id,
+        campaignId: id,
         timestamp: {
           gte: thirtyDaysAgo,
         },
